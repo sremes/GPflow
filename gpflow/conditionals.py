@@ -182,8 +182,9 @@ def base_conditional(Kmn, Kmm, Knn, f, *, full_cov=False, q_sqrt=None, white=Fal
     """
     logger.debug("base conditional")
     # compute kernel stuff
-    num_func = tf.shape(f)[1]  # R
-    Lm = tf.cholesky(Kmm)
+    shape = tf.shape(f)
+    num_ind, num_func = shape[0], shape[1]  # R
+    Lm = tf.cholesky(Kmm) + settings.numerics.jitter_level*tf.eye(num_ind)
 
     # Compute the projection matrix A
     A = tf.matrix_triangular_solve(Lm, Kmn, lower=True)
@@ -275,7 +276,7 @@ def uncertain_conditional(Xnew_mu, Xnew_var, feat, kern, q_mu, q_sqrt, *,
 
     eKuf = tf.transpose(expectation(pXnew, (kern, feat)))  # M x N (psi1)
     Kuu = feat.Kuu(kern, jitter=settings.numerics.jitter_level)  # M x M
-    Luu = tf.cholesky(Kuu)  # M x M
+    Luu = tf.cholesky(Kuu) + settings.numerics.jitter_level*tf.eye(num_ind)  # M x M
 
     if not white:
         q_mu = tf.matrix_triangular_solve(Luu, q_mu, lower=True)
