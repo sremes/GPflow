@@ -191,10 +191,12 @@ def base_conditional(Kmn, Kmm, Knn, f, *, full_cov=False, q_sqrt=None, white=Fal
 
     # compute the covariance due to the conditioning
     if full_cov:
-        fvar = Knn - tf.matmul(A, A, transpose_a=True)
+        fvar = settings.numerics.jitter_level * tf.eye(tf.shape(Knn)[0])  # diagonal jitter
+        fvar += Knn - tf.matmul(A, A, transpose_a=True)
         fvar = tf.tile(fvar[None, :, :], [num_func, 1, 1])  # R x N x N
     else:
-        fvar = Knn - tf.reduce_sum(tf.square(A), 0)
+        fvar = settings.numerics.jitter_level
+        fvar += Knn - tf.reduce_sum(tf.square(A), 0)
         fvar = tf.tile(fvar[None, :], [num_func, 1])  # R x N
 
     # another backsubstitution in the unwhitened case
