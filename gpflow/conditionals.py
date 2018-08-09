@@ -184,14 +184,14 @@ def base_conditional(Kmn, Kmm, Knn, f, *, full_cov=False, q_sqrt=None, white=Fal
     # compute kernel stuff
     shape = tf.shape(f)
     num_ind, num_func = shape[0], shape[1]  # R
-    Lm = tf.cholesky(Kmm) + settings.numerics.jitter_level*tf.eye(num_ind)
+    Lm = tf.cholesky(Kmm) + settings.numerics.jitter_level*tf.eye(num_ind, dtype=settings.dtypes.float_type)
 
     # Compute the projection matrix A
     A = tf.matrix_triangular_solve(Lm, Kmn, lower=True)
 
     # compute the covariance due to the conditioning
     if full_cov:
-        fvar = settings.numerics.jitter_level * tf.eye(tf.shape(Knn)[0])  # diagonal jitter
+        fvar = settings.numerics.jitter_level * tf.eye(tf.shape(Knn)[0], dtype=settings.dtypes.float_type)  # diagonal jitter
         fvar += Knn - tf.matmul(A, A, transpose_a=True)
         fvar = tf.tile(fvar[None, :, :], [num_func, 1, 1])  # R x N x N
     else:
