@@ -115,7 +115,8 @@ class SVGP(GPModel):
             `q_sqrt` is two dimensional and only holds the square root of the
             covariance diagonal elements. If False, `q_sqrt` is three dimensional.
         """
-        q_mu = np.zeros((num_inducing, self.num_latent)) if q_mu is None else q_mu
+        #q_mu = np.zeros((num_inducing, self.num_latent)) if q_mu is None else q_mu
+        q_mu = np.random.randn(num_inducing, self.num_latent) if q_mu is None else q_mu
         self.q_mu = Parameter(q_mu, dtype=settings.float_type)  # M x P
 
         if q_sqrt is None:
