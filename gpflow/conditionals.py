@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import numpy as np
 
 import tensorflow as tf
 
@@ -68,6 +69,10 @@ def _conditional(Xnew, feat, kern, f, *, full_cov=False, full_output_cov=False, 
     Kmm = Kuu(feat, kern, jitter=settings.numerics.jitter_level)  # M x M
     Kmn = Kuf(feat, kern, Xnew)  # M x N
     Knn = kern.K(Xnew) if full_cov else kern.Kdiag(Xnew)
+
+    with tf.control_dependencies([tf.assert_positive(Knn, message='Knn negative!')]):
+        #Knn = tf.Print(Knn, [Knn], 'Knn')
+        Knn = tf.identity(Knn)
 
     fmean, fvar = base_conditional(Kmn, Kmm, Knn, f, full_cov=full_cov,
                                    q_sqrt=q_sqrt, white=white)  # N x R,  R x N x N or N x R
@@ -185,7 +190,8 @@ def base_conditional(Kmn, Kmm, Knn, f, *, full_cov=False, q_sqrt=None, white=Fal
     shape = tf.shape(f)
     num_ind, num_func = shape[0], shape[1]  # R
     jitter = settings.numerics.jitter_level*tf.eye(num_ind, dtype=settings.dtypes.float_type)
-    Lm = tf.cholesky(Kmm + jitter) + jitter
+    Lm = tf.cholesky(Kmm + jitter) #+ jitter
+    #Lm = tf.cholesky(Kmm)
 
     # Compute the projection matrix A
     A = tf.matrix_triangular_solve(Lm, Kmn, lower=True)
@@ -199,6 +205,12 @@ def base_conditional(Kmn, Kmm, Knn, f, *, full_cov=False, q_sqrt=None, white=Fal
         fvar = settings.numerics.jitter_level
         fvar += Knn - tf.reduce_sum(tf.square(A), 0)
         fvar = tf.tile(fvar[None, :], [num_func, 1])  # R x N
+
+        fvar = tf.clip_by_value(fvar, 1e-16, np.inf)  # prevent numerical errors
+        #fvar = tf.Print(fvar, [tf.reduce_min(fvar), tf.reduce_mean(fvar), tf.reduce_max(fvar)], 'fvar min/mean/max: ')
+
+    #with tf.control_dependencies([tf.assert_positive(fvar, message='conditional fvar, step 1')]):
+    #    fvar = tf.identity(fvar)
 
     # another backsubstitution in the unwhitened case
     if not white:
