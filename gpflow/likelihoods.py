@@ -141,8 +141,14 @@ class Gaussian(Likelihood):
 
     @params_as_tensors
     def variational_expectations(self, Fmu, Fvar, Y):
-        return -0.5 * np.log(2 * np.pi) - 0.5 * tf.log(self.variance) \
-               - 0.5 * (tf.square(Y - Fmu) + Fvar) / self.variance
+        # self.variance = tf.Print(self.variance, [self.variance], 'likelihood variance: ')
+        neg_log_var = - 0.5 * tf.log(self.variance)
+        # neg_log_var = tf.Print(neg_log_var, [neg_log_var], 'neg_log_var: ')
+        #Fmu = tf.Print(Fmu, [Fmu], 'Fmu: ')
+        #Fvar = tf.Print(Fvar, [Fvar], 'Fvar: ')
+        neg_square_diff = - 0.5 * (tf.square(Y - Fmu) + Fvar) / self.variance
+        #neg_square_diff = tf.Print(neg_square_diff, [neg_square_diff], 'neg_square_diff: ')
+        return -0.5 * np.log(2 * np.pi) + neg_log_var + neg_square_diff
 
 
 class Poisson(Likelihood):

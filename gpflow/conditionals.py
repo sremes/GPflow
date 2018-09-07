@@ -190,8 +190,7 @@ def base_conditional(Kmn, Kmm, Knn, f, *, full_cov=False, q_sqrt=None, white=Fal
     shape = tf.shape(f)
     num_ind, num_func = shape[0], shape[1]  # R
     jitter = settings.numerics.jitter_level*tf.eye(num_ind, dtype=settings.dtypes.float_type)
-    Lm = tf.cholesky(Kmm + jitter) #+ jitter
-    #Lm = tf.cholesky(Kmm)
+    Lm = tf.cholesky(Kmm + jitter)
 
     # Compute the projection matrix A
     A = tf.matrix_triangular_solve(Lm, Kmn, lower=True)
@@ -206,11 +205,11 @@ def base_conditional(Kmn, Kmm, Knn, f, *, full_cov=False, q_sqrt=None, white=Fal
         fvar += Knn - tf.reduce_sum(tf.square(A), 0)
         fvar = tf.tile(fvar[None, :], [num_func, 1])  # R x N
 
-        fvar = tf.clip_by_value(fvar, 1e-16, np.inf)  # prevent numerical errors
+        #fvar = tf.clip_by_value(fvar, 1e-16, np.inf)  # prevent numerical errors
         #fvar = tf.Print(fvar, [tf.reduce_min(fvar), tf.reduce_mean(fvar), tf.reduce_max(fvar)], 'fvar min/mean/max: ')
 
-    #with tf.control_dependencies([tf.assert_positive(fvar, message='conditional fvar, step 1')]):
-    #    fvar = tf.identity(fvar)
+    with tf.control_dependencies([tf.assert_positive(fvar, message='conditional fvar, step 1')]):
+        fvar = tf.identity(fvar)
 
     # another backsubstitution in the unwhitened case
     if not white:
@@ -291,7 +290,7 @@ def uncertain_conditional(Xnew_mu, Xnew_var, feat, kern, q_mu, q_sqrt, *,
 
     eKuf = tf.transpose(expectation(pXnew, (kern, feat)))  # M x N (psi1)
     Kuu = feat.Kuu(kern, jitter=settings.numerics.jitter_level)  # M x M
-    Luu = tf.cholesky(Kuu) + settings.numerics.jitter_level*tf.eye(num_ind)  # M x M
+    Luu = tf.cholesky(Kuu)  # M x M
 
     if not white:
         q_mu = tf.matrix_triangular_solve(Luu, q_mu, lower=True)
