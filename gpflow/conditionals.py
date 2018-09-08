@@ -190,7 +190,7 @@ def base_conditional(Kmn, Kmm, Knn, f, *, full_cov=False, q_sqrt=None, white=Fal
     shape = tf.shape(f)
     num_ind, num_func = shape[0], shape[1]  # R
     jitter = settings.numerics.jitter_level*tf.eye(num_ind, dtype=settings.dtypes.float_type)
-    Lm = tf.cholesky(Kmm + jitter)
+    Lm = tf.cholesky(Kmm)
 
     # Compute the projection matrix A
     A = tf.matrix_triangular_solve(Lm, Kmn, lower=True)
